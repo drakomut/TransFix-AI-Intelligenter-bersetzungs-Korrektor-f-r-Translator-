@@ -1,55 +1,179 @@
-Beschreibung
+# TransFix AI
 
-TransFix AI ist ein Werkzeug zur Qualitätskontrolle und automatischen Korrektur von Translator++-Projekten. 
-Das Programm analysiert .trans-Dateien, erkennt typische Übersetzungsfehler und kann diese mithilfe eines lokalen KI-Modells aus LM Studio automatisch korrigieren. 
-Es wurde speziell für RPG Maker Spiele entwickelt und berücksichtigt RPG-Maker-Steuercodes, Zeilenumbrüche und Dialogbox-Limits.
+**Intelligenter Übersetzungs-Korrektor für Translator++ und RPG Maker Projekte**
 
-Installation
-LM Studio installieren.
-Ein kompatibles Sprachmodell herunterladen (z. B. Qwen, DeepHermes oder ein anderes Übersetzungsmodell).
-In LM Studio den Local Server starten.
-Unter Server Options die Option Enable CORS aktivieren.
-trans_editor.html im Browser öffnen.
-Die URL von LM Studio eintragen (standardmäßig http://localhost:1234/v1).
-Die gewünschte .trans-Datei laden.
-Funktionen
-📂 .trans-Dateien öffnen
-Lädt Translator++-Projektdateien direkt im Browser.
-Keine Installation zusätzlicher Programme erforderlich.
-🔍 Automatische Fehleranalyse
+TransFix AI ist ein Browser-basiertes Werkzeug zur Analyse und automatischen Korrektur von `.trans`-Dateien aus Translator++.
 
-Erkennt unter anderem:
+Das Tool erkennt typische Übersetzungsfehler in RPG Maker MV/MZ Projekten und kann diese mithilfe eines lokalen KI-Modells aus LM Studio automatisch beheben.
 
-Fehlende RPG-Maker-Codes (\C[n], \>, \<, \|)
-Zusätzliche oder fehlerhafte Codes
-Nicht übersetzte japanische Texte
-Halluzinationen der KI
-Fehlerhafte Zeilenumbrüche
-Zu lange Dialogtexte
-Leere Übersetzungen
-Defekte Hex-Ausgaben (0xf000d usw.)
-🤖 KI-Korrektur
-Korrigiert einzelne Zeilen per Knopfdruck.
-Nutzt lokale KI über LM Studio.
-Keine Cloud-Anbindung erforderlich.
-⚡ Stapelverarbeitung
-Korrigiert alle markierten Fehler automatisch.
-Mehrere Einträge gleichzeitig verarbeitbar.
-Fortschrittsanzeige mit Stop-Funktion.
-📝 Manueller Editor
-Übersetzungen können direkt bearbeitet werden.
-Änderungen werden sofort überprüft.
-Fehler werden farblich markiert.
-💾 Speichern
-Speichert die bearbeitete Datei wieder als .trans.
-Kompatibel mit Translator++.
-🎮 Speziell für RPG Maker
-Erhält Steuercodes automatisch.
-Beachtet Dialogfenster-Größen.
-Unterstützt Farb-Codes und Textformatierungen.
-Entfernt Furigana-Tags korrekt aus Übersetzungen.
-Kurzbeschreibung für GitHub oder Download-Seite
+---
 
-TransFix AI ist ein Browser-Tool zur Analyse und automatischen Korrektur von Translator++-Dateien. 
-Es erkennt typische Übersetzungsfehler in RPG-Maker-Projekten und kann diese mithilfe lokaler KI-Modelle aus LM Studio automatisch beheben. 
-Unterstützt Batch-Verarbeitung, Fehlerprüfung und sichere Behandlung von RPG-Maker-Steuercodes.
+## Features
+
+### Automatische Fehlererkennung
+
+TransFix AI erkennt unter anderem:
+
+* Fehlende RPG-Maker-Codes (`\C[n]`, `\>`, `\<`, `\|`, `\G`, `\{`, `\}`)
+* Zusätzliche oder beschädigte Codes
+* Nicht übersetzte japanische Texte
+* Halluzinationen von KI-Modellen
+* Fehlerhafte Zeilenumbrüche
+* Zu lange Dialogtexte
+* Leere Übersetzungen
+* Defekte Hex-Ausgaben (`0xf000d`, `0xf000e` usw.)
+* Fehlerhafte Farbcode-Blöcke
+
+### KI-Korrektur
+
+* Einzelne Zeilen per Knopfdruck korrigieren
+* Stapelverarbeitung mehrerer Fehler
+* Lokale Verarbeitung über LM Studio
+* Keine Cloud-Dienste erforderlich
+
+### Editor
+
+* Direkte Bearbeitung von Übersetzungen
+* Sofortige Fehleranalyse
+* Farbige Markierung problematischer Einträge
+* Such- und Filterfunktionen
+
+### RPG Maker Unterstützung
+
+* RPG Maker MV
+* RPG Maker MZ
+* Translator++
+* Erhalt aller relevanten Steuerzeichen
+* Dialogbox-Längen werden berücksichtigt
+
+---
+
+## Voraussetzungen
+
+### Benötigte Software
+
+* LM Studio
+* Ein kompatibles Sprachmodell
+* Ein aktueller Browser (Firefox empfohlen)
+
+Empfohlene Modelle:
+
+* Qwen 3.5
+* DeepHermes 3
+* Gemma 3
+* Andere OpenAI-kompatible Modelle
+
+---
+
+## Installation
+
+### 1. LM Studio installieren
+
+LM Studio herunterladen und installieren.
+
+### 2. Modell laden
+
+Ein kompatibles Modell herunterladen und laden.
+
+### 3. Local Server starten
+
+In LM Studio:
+
+* Developer → Local Server
+* Start Server
+
+### 4. CORS aktivieren
+
+In LM Studio:
+
+Server Options → Enable CORS
+
+aktivieren und den Server neu starten.
+
+### 5. Tool starten
+
+`trans_editor.html` im Browser öffnen.
+
+### 6. Verbindung testen
+
+Standard-URL:
+
+http://localhost:1234/v1
+
+Auf **„Testen“** klicken.
+
+---
+
+## Verwendung
+
+### Datei öffnen
+
+1. `.trans` Datei laden
+2. Datei auswählen
+3. Analyse startet automatisch
+
+### Einzelne Fehler korrigieren
+
+1. Fehlerhafte Zeile auswählen
+2. Auf **✦ Fix** klicken
+3. KI erstellt eine korrigierte Übersetzung
+
+### Alle Fehler korrigieren
+
+1. Auf **🤖 Alle markierten korrigieren** klicken
+2. Die KI verarbeitet alle markierten Einträge automatisch
+
+### Speichern
+
+Nach Abschluss:
+
+**💾 Speichern**
+
+Die Datei wird erneut als `.trans` gespeichert und kann direkt in Translator++ verwendet werden.
+
+---
+
+## Unterstützte Fehlerarten
+
+| Fehler           | Beschreibung                               |
+| ---------------- | ------------------------------------------ |
+| Code fehlt       | RPG-Maker-Code wurde entfernt              |
+| Code hinzugefügt | Nicht vorhandener Code wurde eingefügt     |
+| Code verschoben  | Farb- oder Steuercode an falscher Position |
+| Code offen       | Farbcode nicht korrekt geschlossen         |
+| Hex-Müll         | 0xf000d / 0xf000e Fehler                   |
+| Nicht übersetzt  | Japanischer Text vorhanden                 |
+| Halluzination    | KI hat unerwünschten Inhalt erzeugt        |
+| Zeilenumbruch    | Fehlerhafte `\n` Struktur                  |
+| Zu lang          | Dialog passt nicht mehr ins Fenster        |
+| Leer             | Keine Übersetzung vorhanden                |
+
+---
+
+## Datenschutz
+
+TransFix AI arbeitet vollständig lokal.
+
+* Keine Cloud-Anbindung
+* Keine Datenübertragung an externe Server
+* Alle Übersetzungen bleiben auf dem eigenen Rechner
+
+---
+
+## Lizenz
+
+MIT License
+
+---
+
+## Danksagung
+
+Dieses Projekt wurde für die Translator++ und RPG Maker Community entwickelt.
+
+Besonderer Dank gilt den Entwicklern von:
+
+* Translator++
+* LM Studio
+* Qwen
+* DeepHermes
+* RPG Maker
