@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>.trans Korrektor – LM Studio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap');
+  :root{--bg:#0e0f13;--surface:#16181f;--surface2:#1e2028;--border:#2a2d38;--accent:#7c5cfc;--accent2:#fc5c7d;--warn:#f5a623;--ok:#3ecf8e;--text:#e8eaf0;--muted:#6b6f80;--mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;}
+  header{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;background:var(--surface);}
+  header h1{font-size:1.15rem;font-weight:800;letter-spacing:-0.5px;}
+  .badge{font-family:var(--mono);font-size:0.68rem;background:var(--accent);padding:3px 8px;border-radius:4px;}
+  .spacer{flex:1;}
+  .config-panel{padding:10px 24px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+  .config-panel label{display:flex;flex-direction:column;gap:3px;font-size:0.68rem;color:var(--muted);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;}
+  .toolbar{padding:10px 24px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .btn{font-family:var(--sans);font-size:0.8rem;font-weight:700;padding:6px 14px;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover:not(:disabled){background:#9370ff;}
+  .btn-ok{background:var(--ok);color:#000;}.btn-ok:hover:not(:disabled){background:#5ae0a8;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+  .btn-ghost:hover:not(:disabled){color:var(--text);border-color:var(--accent);}
+  .btn-ghost.active{color:var(--accent);border-color:var(--accent);background:rgba(124,92,252,.1);}
+  .sep{width:1px;height:26px;background:var(--border);margin:0 3px;}
+  input[type=text],input[type=number]{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--sans);font-size:0.8rem;padding:5px 10px;border-radius:6px;outline:none;}
+  input[type=text]:focus,input[type=number]:focus{border-color:var(--accent);}
+  .main{display:flex;flex:1;overflow:hidden;height:calc(100vh - 135px);}
+  .sidebar{width:215px;min-width:180px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  .sidebar-header{display:flex;flex-direction:column;border-bottom:1px solid var(--border);}
+  .sidebar-title-row{padding:10px 14px;font-size:0.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
+  .skipped-badge{font-size:0.58rem;background:rgba(107,111,128,.3);color:var(--muted);padding:1px 5px;border-radius:3px;}
+  .sidebar-bulk{padding:6px 8px;display:flex;gap:5px;border-top:1px solid var(--border);flex-wrap:wrap;}
+  .bulk-btn{font-family:var(--sans);font-size:0.62rem;font-weight:700;padding:3px 7px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s;}
+  .bulk-btn:hover{color:var(--text);border-color:var(--accent);}
+  .file-list{overflow-y:auto;flex:1;padding:4px 0;}
+  .file-item{padding:6px 10px;font-family:var(--mono);font-size:0.68rem;cursor:pointer;color:var(--muted);border-left:2px solid transparent;transition:all .1s;display:flex;align-items:center;gap:5px;}
+  .file-item:hover{background:var(--surface2);color:var(--text);}
+  .file-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(124,92,252,.08);}
+  .file-item.skipped{opacity:.4;}.file-item.skipped .file-name{text-decoration:line-through;}
+  .file-item .prog{font-size:0.62rem;color:var(--muted);flex-shrink:0;margin-left:auto;}
+  .file-item.has-flags .prog{color:var(--warn);}
+  .file-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+  .file-cb{appearance:none;-webkit-appearance:none;width:13px;height:13px;border:1.5px solid var(--border);border-radius:3px;background:transparent;cursor:pointer;position:relative;transition:all .15s;flex-shrink:0;}
+  .file-cb:checked{background:var(--accent);border-color:var(--accent);}
+  .file-cb:checked::after{content:'✓';position:absolute;top:-1px;left:1px;font-size:9px;color:#fff;font-weight:700;}
+  .editor-area{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+  .stats-bar{padding:7px 18px;background:var(--surface2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.68rem;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap;}
+  .stats-bar .stat{display:flex;gap:5px;align-items:center;}
+  .stats-bar .num{color:var(--text);font-weight:600;}
+  .stats-bar .num.warn{color:var(--warn);}.stats-bar .num.ok{color:var(--ok);}
+  .table-container{flex:1;overflow:auto;}
+  table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+  thead th{position:sticky;top:0;z-index:10;background:var(--surface);padding:9px 10px;text-align:left;font-weight:700;letter-spacing:.5px;border-bottom:2px solid var(--border);font-size:0.68rem;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);}
+  tbody tr:hover{background:rgba(255,255,255,.03);}
+  tbody tr.flagged{background:rgba(245,166,35,.05);}
+  tbody tr.flagged:hover{background:rgba(245,166,35,.09);}
+  td{padding:7px 10px;vertical-align:top;}
+  td.col-num{font-family:var(--mono);font-size:0.65rem;color:var(--muted);width:36px;text-align:right;}
+  td.col-orig{font-family:var(--mono);font-size:0.72rem;color:var(--muted);max-width:280px;white-space:pre-wrap;word-break:break-word;}
+  td.col-orig .code{color:#7c5cfc;font-weight:600;}
+  td.col-trans{min-width:260px;max-width:380px;}
+  td.col-trans textarea{width:100%;background:transparent;border:1px solid transparent;color:var(--text);font-family:var(--mono);font-size:0.72rem;resize:vertical;min-height:44px;padding:3px 5px;border-radius:4px;outline:none;transition:border-color .15s;line-height:1.5;}
+  td.col-trans textarea:focus{border-color:var(--accent);background:rgba(124,92,252,.05);}
+  td.col-flags{width:150px;font-size:0.68rem;}
+  .flag-pill{display:inline-block;padding:2px 6px;border-radius:8px;font-size:0.62rem;font-weight:700;letter-spacing:.4px;margin:2px 2px 2px 0;}
+  .flag-hallucination,.flag-codes-added,.flag-hex-garbage{background:rgba(252,92,125,.2);color:var(--accent2);}
+  .flag-codes-missing,.flag-r-tag,.flag-codes-misplaced,.flag-codes-unbalanced{background:rgba(245,166,35,.2);color:var(--warn);}
+  .flag-not-translated{background:rgba(255,200,0,.18);color:#ffd700;}
+  .flag-linebreak{background:rgba(62,207,142,.2);color:var(--ok);}
+  .flag-empty{background:rgba(107,111,128,.2);color:var(--muted);}
+  .flag-too-long{background:rgba(252,92,125,.15);color:#ff9eb5;}
+  td.col-ctx{font-family:var(--mono);font-size:0.62rem;color:var(--muted);max-width:160px;word-break:break-all;}
+  td.col-ai{width:72px;}
+  .lm-btn{font-family:var(--sans);font-size:0.68rem;font-weight:700;padding:5px 9px;border-radius:5px;border:none;cursor:pointer;background:var(--accent);color:#fff;transition:all .15s;width:100%;}
+  .lm-btn:hover:not(:disabled){background:#9370ff;}
+  .lm-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .lm-btn.loading{background:var(--surface2);color:var(--muted);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--muted);}
+  .empty-state .icon{font-size:2.8rem;}
+  #notif{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:0.8rem;max-width:340px;z-index:100;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;}
+  #notif.show{opacity:1;transform:translateY(0);}
+  #notif.ok{border-color:var(--ok);color:var(--ok);}
+  #notif.warn{border-color:var(--warn);color:var(--warn);}
+  #notif.err{border-color:var(--accent2);color:var(--accent2);}
+  .progress-bar{height:2px;background:var(--border);}
+  .progress-bar-inner{height:100%;background:var(--accent);transition:width .3s;}
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>.trans Korrektor</h1>
+  <span class="badge">Translator++ · LM Studio</span>
+  <div class="spacer"></div>
+  <button class="btn btn-ghost" id="btn-open">📂 Öffnen</button>
+  <input type="file" id="file-input" accept=".trans" style="display:none">
+  <button class="btn btn-ok" id="btn-save" disabled>💾 Speichern</button>
+</header>
+
+<div class="config-panel">
+  <label>LM Studio URL<input type="text" id="lm-url" value="http://localhost:1234/v1" style="min-width:200px"></label>
+  <label>Modell<input type="text" id="lm-model" value="local-model" style="min-width:180px"></label>
+  <label>Zielsprache<input type="text" id="lm-lang" value="Deutsch" style="min-width:90px;width:90px"></label>
+  <label>Batch<input type="number" id="lm-batch" value="4" min="1" max="20" style="min-width:60px;width:60px"></label>
+  <button class="btn btn-primary" id="btn-test-lm">🔌 Testen</button>
+  <div class="sep"></div>
+  <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0">
+    <input type="checkbox" id="chk-skip-empty" checked> Leere überspringen
+  </label>
+</div>
+
+<div class="toolbar">
+  <button class="btn btn-ghost active" data-filter="all">Alle</button>
+  <button class="btn btn-ghost" data-filter="flagged">⚠ Markiert</button>
+  <button class="btn btn-ghost" data-filter="empty">○ Leer</button>
+  <button class="btn btn-ghost" data-filter="done">✓ Übersetzt</button>
+  <div class="sep"></div>
+  <input type="text" id="search-input" placeholder="Suche…" style="min-width:220px">
+  <div class="sep"></div>
+  <button class="btn btn-primary" id="btn-fix-all">🤖 Alle markierten korrigieren</button>
+  <div id="progress-wrap" style="display:none;align-items:center;gap:8px;font-size:.72rem;color:var(--muted);font-family:var(--mono)">
+    <span id="progress-text">0/0</span>
+    <div class="progress-bar" style="width:120px"><div class="progress-bar-inner" id="progress-bar" style="width:0%"></div></div>
+    <button class="btn btn-ghost" id="btn-stop" style="padding:3px 8px;font-size:.68rem">■ Stop</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title-row">Dateien<span id="skipped-count" class="skipped-badge" style="display:none"></span></div>
+      <div class="sidebar-bulk">
+        <button class="bulk-btn" id="btn-check-all">☑ Alle</button>
+        <button class="bulk-btn" id="btn-uncheck-all">☐ Keine</button>
+        <button class="bulk-btn" id="btn-uncheck-js">⊘ Plugins</button>
+        <button class="bulk-btn" id="btn-uncheck-sys">⊘ System</button>
+      </div>
+    </div>
+    <div class="file-list" id="file-list"></div>
+  </div>
+  <div class="editor-area">
+    <div class="stats-bar" id="stats-bar"><div class="stat">Lade .trans Datei…</div></div>
+    <div class="table-container" id="table-container">
+      <div class="empty-state">
+        <div class="icon">📄</div><p>Öffne eine .trans Datei</p>
+        <button class="btn btn-primary" id="btn-open2">📂 Datei öffnen</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="notif"></div>
+
+<script>
+// ═══ STATE ═══════════════════════════════════════════════
+let transData=null,fileName='',currentFileKey=null;
+let filterMode='all',searchQuery='',stopRequested=false;
+let skippedFiles=new Set();
+
+// ═══ CODE HELPERS ════════════════════════════════════════
+function extractCodes(s){
+  if(!s)return[];
+  return(s.match(/\\[A-Za-z>|!.<{}]+(?:\[[^\]]*\])?/g)||[]);
+}
+function isStructuralCode(c){
+  return/^\\[A-Za-z>|!.<{}]/.test(c)&&!c.startsWith('\\r[');
+}
+
+// ═══ SKIP DETECTION ══════════════════════════════════════
+function shouldSkipEntry(s){
+  s=(s||'').trim();
+  if(!s)return true;
+  if(/^[-=━─┈┉\s\u2500-\u257f\u25a0-\u25ff\u30fb\u3002]{3,}$/.test(s))return true;
+  if(/^-{5,}$/.test(s))return true;
+  if(/^[A-Z][A-Z0-9_\s]{2,}$/.test(s)&&(s.includes('_')||/^[A-Z]{2,}$/.test(s)))return true;
+  if(/^EV\d+$/i.test(s))return true;
+  return false;
+}
+
+// ═══ FLAG ANALYSIS ════════════════════════════════════════
+function hasJapaneseOutsideCodes(trans){
+  if(!trans)return false;
+  let s=trans.replace(/\\C\[\d+\][\s\S]*?\\C\[0\]/g,'');
+  s=s.replace(/\\r\[[^\]]*\]/g,'');
+  return/[\u3040-\u9fff\u30a0-\u30ff\u4e00-\u9fff]/.test(s);
+}
+
+function checkCodesMisplaced(orig,trans){
+  // Detect: orig has \C[n]TEXT\C[0] but trans has \C[n]\C[0] (empty span = text moved out)
+  const origSpans=Array.from(orig.matchAll(/\\C\[(\d+)\]([\s\S]*?)\\C\[0\]/g));
+  const transSpans=Array.from(trans.matchAll(/\\C\[(\d+)\]([\s\S]*?)\\C\[0\]/g));
+  for(let i=0;i<Math.min(origSpans.length,transSpans.length);i++){
+    if(origSpans[i][1]===transSpans[i][1]&&origSpans[i][2].trim().length>0&&transSpans[i][2].trim().length===0)
+      return true;
+  }
+  return false;
+}
+
+function checkCodesUnbalanced(trans){
+  const opens=(trans.match(/\\C\[(?!0\])\d+\]/g)||[]).length;
+  const closes=(trans.match(/\\C\[0\]/g)||[]).length;
+  return opens!==closes;
+}
+
+function checkHexGarbage(trans){
+  return/0x[f][0-9a-f]{3,}/i.test(trans||'');
+}
+
+function analyzeRow(orig,trans,ctx){
+  ctx=ctx||'';orig=orig||'';
+  const flags=[];
+  if(shouldSkipEntry(orig))return[];
+  if(!trans||!trans.trim()){flags.push('empty');return flags;}
+
+  const origCodes=extractCodes(orig);
+  const transCodes=extractCodes(trans);
+
+  // 1. \r[...] tags still in translation
+  if(origCodes.filter(c=>c.startsWith('\\r[')).length>0&&
+     transCodes.filter(c=>c.startsWith('\\r[')).length>0)flags.push('r-tag');
+
+  // 2. Structural codes missing / added
+  const oSet={},tSet={};
+  for(const c of origCodes.filter(isStructuralCode))oSet[c]=(oSet[c]||0)+1;
+  for(const c of transCodes.filter(isStructuralCode))tSet[c]=(tSet[c]||0)+1;
+  for(const[c,n]of Object.entries(oSet)){if((tSet[c]||0)<n){flags.push('codes-missing');break;}}
+  for(const[c,n]of Object.entries(tSet)){if((oSet[c]||0)<n){flags.push('codes-added');break;}}
+
+  // 3. Codes misplaced (moved out of their span → empty \C[n]\C[0])
+  if(checkCodesMisplaced(orig,trans))flags.push('codes-misplaced');
+
+  // 4. Unbalanced color codes (open without close or vice versa)
+  if(checkCodesUnbalanced(trans))flags.push('codes-unbalanced');
+
+  // 5. Hex garbage (0xf000d etc — \> or other codes converted to hex)
+  if(checkHexGarbage(trans))flags.push('hex-garbage');
+
+  // 6. Japanese outside code spans
+  if(hasJapaneseOutsideCodes(trans))flags.push('not-translated');
+
+  // 7. Hallucination
+  const halluPats=[
+    /\b(ich bin|i am|i'm)\b.{0,40}\b(ki|a\.?i\.|sprachmodell|assistent)\b/i,
+    /\bals (ki|ai|assistent)\b/i,/\[note\s*:/i,/\bplease note\b/i,
+    /\bI cannot (translate|help)\b/i,/\bübersetzung:\s*\[/i,
+  ];
+  for(const p of halluPats){if(p.test(trans)){flags.push('hallucination');break;}}
+
+  // 8. Too long
+  const isDialogCtx=!ctx||/(bottom|message\d*|displayName)$/.test(ctx);
+  const maxMult=isDialogCtx?4.0:9.0;
+  const jpLen=orig.replace(/[^\u3000-\u9fff\uff00-\uffef]/g,'').length;
+  if(jpLen>8&&trans.length>jpLen*maxMult)flags.push('too-long');
+
+  // 9. Newline count mismatch
+  const origNL=(orig.match(/\\n/g)||[]).length;
+  const transNL=(trans.match(/\\n/g)||[]).length;
+  if(origNL>0&&Math.abs(origNL-transNL)>1)flags.push('linebreak');
+
+  return flags;
+}
+
+function flagHtml(flags){
+  const L={
+    hallucination:'🤖 Halluzination',
+    'codes-missing':'⚠ Code fehlt',
+    'codes-added':'⚠ Code hinzu',
+    'codes-misplaced':'⚠ Code verschoben',
+    'codes-unbalanced':'⚠ Code offen',
+    'hex-garbage':'💀 Hex-Müll',
+    'r-tag':'\\r[ unersetzt',
+    'not-translated':'🇯🇵 Nicht übersetzt',
+    linebreak:'↵ Zeilenumbruch',
+    'too-long':'↔ Zu lang',
+    empty:'○ Leer',
+  };
+  return flags.map(f=>`<span class="flag-pill flag-${f}">${L[f]||f}</span>`).join('');
+}
+
+// ═══ SYSTEM PROMPT ════════════════════════════════════════
+function buildSystemPrompt(lang){
+return `Du bist ein präziser JRPG-Übersetzer (RPG Maker MV, Spiel: Trans Female Fantasy Legacy).
+Zielsprache: ${lang}
+
+══════════════════════════════════════════
+REGELWERK — ALLE REGELN SIND ZWINGEND
+══════════════════════════════════════════
+
+§1  FARB-CODES: \\C[n]TEXT\\C[0]
+    Der TEXT zwischen den Codes wird übersetzt, die Codes bleiben UM den Text herum.
+    RICHTIG:  \\C[3]"Pilgergang"\\C[0]
+    FALSCH:   "Pilgergang"\\C[3]\\C[0]   ← Codes NIE ans Ende verschieben!
+    FALSCH:   \\C[3]\\C[0]              ← Leere Span, Text fehlt!
+    Jedes \\C[n] muss ein passendes \\C[0] haben.
+
+§2  FURIGANA-TAGS: \\r[Kanji,Lesung]
+    Den Tag NIEMALS wörtlich übernehmen — er gehört NICHT in die Übersetzung!
+    ZWEI Fälle:
+    a) Eigenname (Lesung ist Hiragana eines Personennamens):
+       \\r[顕,あきら] → "Akira"   (die Lesung romanisieren)
+       \\r[恭,やすし] → "Yasushi"
+    b) Normales Wort (Lesung erklärt das Kanji):
+       \\r[宿命,さだめ] → "${lang}e Bedeutung des Kanji"   z.B. "Schicksal"
+       \\r[村長,むらおさ] → "Dorfvorsteher"
+       \\r[海嘯,かいしょう] → "Flutwelle"
+
+§3  ANZEIGEGESCHWINDIGKEIT: \\>  \\|  \\<
+    Diese Codes steuern die Textanzeige und müssen EXAKT als \\> \\| \\< erhalten bleiben.
+    NIEMALS als 0xf000d, 0xf000e oder andere Hex-Werte ausgeben!
+
+§4  ANDERE STRUKTUR-CODES: \\G  \\{  \\}
+    Identisch aus dem Original übernehmen.
+
+§5  ZEILENUMBRÜCHE MIT \\n
+    Eine RPGMaker-Dialogbox fasst ca. 38–42 ${lang}e Zeichen pro Zeile, max. 4 Zeilen.
+    Wenn der Text zu lang ist: mit \\n in Zeilen aufteilen.
+    Beispiel: "Erste Zeile\\nZweite Zeile\\nDritte Zeile"
+    Die Anzahl der \\n soll der des Originals entsprechen.
+    Bei zu langem Text: Text kürzen ODER \\n einfügen — beides ist erlaubt.
+
+§6  VOLLSTÄNDIG ÜBERSETZEN
+    Alle japanischen Zeichen müssen übersetzt werden.
+    Ausnahme: Eigennamen innerhalb von \\C[n]...\\C[0] dürfen romanisiert bleiben
+    wenn sie kein normales deutsches Wort haben (z.B. "Meivre" für メイーヴル).
+
+§7  NUR DEN TEXT AUSGEBEN
+    Keine Erklärungen, keine Klammern mit Anmerkungen, keine Übersetzungshinweise.
+
+§8  TECHNISCHE BEFEHLE LEER LASSEN
+    Einträge wie SV_PLAY_VOICE, HALF_MOVE_ENABLE → leere Zeichenkette ausgeben.`;
+}
+
+// ═══ LM CORRECT ══════════════════════════════════════════
+function getLMCfg(){
+  return{
+    url:document.getElementById('lm-url').value.trim().replace(/\/$/,''),
+    model:document.getElementById('lm-model').value.trim(),
+    lang:document.getElementById('lm-lang').value.trim(),
+    batch:parseInt(document.getElementById('lm-batch').value)||4,
+  };
+}
+
+async function lmCorrect(orig,trans,ctx){
+  const cfg=getLMCfg();
+  const flags=analyzeRow(orig,trans,ctx);
+  let hints=[];
+
+  if(flags.includes('hex-garbage'))
+    hints.push('FEHLER: Die Übersetzung enthält Hex-Werte (0xf000d etc.) statt RPGMaker-Codes. Ersetze jeden 0xf000X-Wert durch den entsprechenden \\>-Code aus dem Original.');
+  if(flags.includes('codes-misplaced'))
+    hints.push('FEHLER: Die \\C[n]...\\C[0]-Codes wurden verschoben. Der übersetzte Text MUSS zwischen den Codes stehen: \\C[3]übersetzter Text\\C[0]');
+  if(flags.includes('codes-unbalanced')){
+    const opens=(trans.match(/\\C\[(?!0\])\d+\]/g)||[]);
+    const closes=(trans.match(/\\C\[0\]/g)||[]);
+    hints.push(`FEHLER: Unbalancierte Codes — ${opens.length}x geöffnet aber ${closes.length}x geschlossen. Jedes \\C[n] braucht genau ein \\C[0].`);
+  }
+  if(flags.includes('r-tag'))
+    hints.push('FEHLER: \\r[...]-Tags sind noch in der Übersetzung. Diese MÜSSEN durch den übersetzten/romanisierten Begriff ersetzt werden (Tag selbst weglassen).');
+  if(flags.includes('codes-missing')){
+    const oS={},tS={};
+    for(const c of extractCodes(orig).filter(isStructuralCode))oS[c]=(oS[c]||0)+1;
+    for(const c of extractCodes(trans).filter(isStructuralCode))tS[c]=(tS[c]||0)+1;
+    const miss=Object.entries(oS).filter(([c,n])=>(tS[c]||0)<n).map(([c])=>c);
+    hints.push(`FEHLER: Folgende Codes fehlen in der Übersetzung und müssen eingefügt werden: ${[...new Set(miss)].join(', ')}`);
+  }
+  if(flags.includes('codes-added')){
+    const oS={},tS={};
+    for(const c of extractCodes(orig).filter(isStructuralCode))oS[c]=(oS[c]||0)+1;
+    for(const c of extractCodes(trans).filter(isStructuralCode))tS[c]=(tS[c]||0)+1;
+    const extra=Object.entries(tS).filter(([c,n])=>(oS[c]||0)<n).map(([c])=>c);
+    hints.push(`FEHLER: Folgende Codes sind in der Übersetzung aber nicht im Original — entfernen: ${[...new Set(extra)].join(', ')}`);
+  }
+  if(flags.includes('not-translated'))
+    hints.push(`FEHLER: Japanische Zeichen außerhalb von Codes. Vollständig ins ${cfg.lang}e übersetzen.`);
+  if(flags.includes('hallucination'))
+    hints.push('FEHLER: Die Übersetzung enthält halluzinierten Text (KI-Selbstreferenz etc.). Nur den Spielinhalt übersetzen.');
+  if(flags.includes('too-long')){
+    const isDesc=ctx&&/description|profile|note/i.test(ctx);
+    if(isDesc)hints.push('HINWEIS: Text zu lang. Max. 2 präzise Sätze.');
+    else hints.push('HINWEIS: Text zu lang für Dialogbox. Mit \\n in Zeilen à max. 40 Zeichen aufteilen (max. 4 Zeilen) oder kürzen.');
+  }
+
+  const hintBlock=hints.length?'\n\n'+hints.map((h,i)=>`[${i+1}] ${h}`).join('\n'):'';
+
+  const userMsg=`KONTEXT: ${ctx}
+JAPANISCHES ORIGINAL: ${orig}
+BISHERIGE ÜBERSETZUNG (mit Fehlern): ${trans}${hintBlock}
+
+Korrigierte ${cfg.lang}e Übersetzung:`;
+
+  let resp;
+  try{
+    resp=await fetch(`${cfg.url}/chat/completions`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:cfg.model,
+        messages:[{role:'system',content:buildSystemPrompt(cfg.lang)},{role:'user',content:userMsg}],
+        temperature:0.2,max_tokens:512,
+      })
+    });
+  }catch(e){
+    if(e.message.includes('Failed to fetch')||e.message.includes('NetworkError'))throw new Error('CORS_ERROR');
+    throw e;
+  }
+  if(!resp.ok){const t=await resp.text().catch(()=>'');throw new Error(`HTTP ${resp.status}: ${t}`);}
+  const data=await resp.json();
+  let result=(data.choices[0].message.content||'').trim();
+  // Strip common preamble patterns
+  result=result.replace(/^(korrigierte?(\s+\S+)?|corrected(\s+\S+)?|übersetzung|translation)[:\s]+/i,'').trim();
+  result=result.replace(/^["'`](.+)["'`]$/s,'$1').trim();
+  if(/^[\[(（]?(keine|empty|leer|none|n\/a)[\])）]?$/i.test(result))result='';
+  return result;
+}
+
+// ═══ FILE LOADING ═════════════════════════════════════════
+document.getElementById('file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadFile(f);});
+document.getElementById('btn-open').addEventListener('click',()=>document.getElementById('file-input').click());
+document.getElementById('btn-open2').addEventListener('click',()=>document.getElementById('file-input').click());
+document.body.addEventListener('dragover',e=>e.preventDefault());
+document.body.addEventListener('drop',e=>{
+  e.preventDefault();
+  const f=e.dataTransfer.files[0];
+  if(f&&f.name.endsWith('.trans'))loadFile(f);else notify('Nur .trans Dateien','err');
+});
+
+function loadFile(f){
+  fileName=f.name;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      transData=JSON.parse(e.target.result);
+      document.getElementById('btn-save').disabled=false;
+      skippedFiles=new Set();
+      buildSidebar();
+      const keys=Object.keys(transData.project.files);
+      if(keys.length)selectFile(keys[0]);
+      notify(`✓ ${fileName} (${keys.length} Dateien)`,'ok');
+    }catch(err){notify('Parse-Fehler: '+err.message,'err');}
+  };
+  reader.readAsText(f,'utf-8');
+}
+
+// ═══ SIDEBAR ══════════════════════════════════════════════
+function isPluginFile(k){return k.includes('js/')||k.toLowerCase().includes('plugin');}
+function isSystemFile(k){return['System','Animations','Tilesets','MapInfos','Troops'].includes(k.split('/').pop().replace('.json',''));}
+function updateSkippedBadge(){
+  const b=document.getElementById('skipped-count');if(!b)return;
+  b.style.display=skippedFiles.size>0?'inline':'none';
+  b.textContent=skippedFiles.size+' übersprungen';
+}
+
+function buildSidebar(){
+  if(!transData)return;
+  const list=document.getElementById('file-list');list.innerHTML='';
+  for(const[key,fval]of Object.entries(transData.project.files)){
+    const rows=fval.data||[];const ctxA=fval.context||[];
+    const flagged=rows.filter((r,i)=>analyzeRow(r[0],r[1],ctxA[i]?ctxA[i][0]:'').length>0).length;
+    const pct=rows.length?Math.round(rows.filter(r=>r[1]&&r[1].trim()).length/rows.length*100):0;
+    const skipped=skippedFiles.has(key);
+    const div=document.createElement('div');
+    div.className='file-item'+(flagged>0&&!skipped?' has-flags':'')+(skipped?' skipped':'');
+    div.dataset.key=key;
+    const short=key.replace('data/','').replace('js/plugins/','plugin/').replace('.json','').replace('.js','');
+    const cb=document.createElement('input');cb.type='checkbox';cb.className='file-cb';cb.checked=!skipped;
+    cb.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(cb.checked)skippedFiles.delete(key);else skippedFiles.add(key);
+      div.classList.toggle('skipped',!cb.checked);
+      div.classList.toggle('has-flags',cb.checked&&flagged>0);
+      updateSkippedBadge();
+    });
+    const nm=document.createElement('span');nm.className='file-name';nm.title=key;nm.textContent=short;
+    const pg=document.createElement('span');pg.className='prog';pg.textContent=flagged>0?'⚠'+flagged:pct+'%';
+    div.appendChild(cb);div.appendChild(nm);div.appendChild(pg);
+    div.addEventListener('click',()=>selectFile(key));
+    list.appendChild(div);
+  }
+  updateSkippedBadge();
+}
+
+document.getElementById('btn-check-all').addEventListener('click',()=>{skippedFiles.clear();buildSidebar();});
+document.getElementById('btn-uncheck-all').addEventListener('click',()=>{if(!transData)return;Object.keys(transData.project.files).forEach(k=>skippedFiles.add(k));buildSidebar();});
+document.getElementById('btn-uncheck-js').addEventListener('click',()=>{
+  if(!transData)return;const ks=Object.keys(transData.project.files).filter(isPluginFile);
+  ks.forEach(k=>skippedFiles.add(k));buildSidebar();notify(ks.length+' Plugin-Dateien deaktiviert','warn');
+});
+document.getElementById('btn-uncheck-sys').addEventListener('click',()=>{
+  if(!transData)return;const ks=Object.keys(transData.project.files).filter(isSystemFile);
+  ks.forEach(k=>skippedFiles.add(k));buildSidebar();notify(ks.length+' System-Dateien deaktiviert','warn');
+});
+
+function selectFile(key){
+  currentFileKey=key;
+  document.querySelectorAll('.file-item').forEach(el=>el.classList.toggle('active',el.dataset.key===key));
+  filterMode='all';searchQuery='';
+  document.getElementById('search-input').value='';
+  document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter==='all'));
+  renderTable();
+}
+
+// ═══ TABLE ════════════════════════════════════════════════
+function hlCodes(s){
+  return esc(s).replace(/(\\[A-Za-z>|!.<{}]+(?:\[[^\]]*\])?)/g,'<span class="code">$1</span>');
+}
+
+function renderTable(){
+  if(!currentFileKey||!transData)return;
+  const fval=transData.project.files[currentFileKey];
+  const rows=fval.data||[];const ctxs=fval.context||[];
+  let indices=rows.map((_,i)=>i);
+  if(filterMode==='flagged')indices=indices.filter(i=>analyzeRow(rows[i][0],rows[i][1],ctxs[i]?ctxs[i][0]:'').length>0);
+  else if(filterMode==='empty')indices=indices.filter(i=>!rows[i][1]||!rows[i][1].trim());
+  else if(filterMode==='done')indices=indices.filter(i=>rows[i][1]&&rows[i][1].trim());
+  if(searchQuery){
+    const q=searchQuery.toLowerCase();
+    indices=indices.filter(i=>(rows[i][0]||'').toLowerCase().includes(q)||(rows[i][1]||'').toLowerCase().includes(q));
+  }
+  const total=rows.length,translated=rows.filter(r=>r[1]&&r[1].trim()).length;
+  const flagged=rows.filter((r,i)=>analyzeRow(r[0],r[1],ctxs[i]?ctxs[i][0]:'').length>0).length;
+  const pct=total?Math.round(translated/total*100):0;
+  document.getElementById('stats-bar').innerHTML=`
+    <div class="stat">Datei: <span class="num">${esc(currentFileKey)}</span></div>
+    <div class="stat">Gesamt: <span class="num">${total}</span></div>
+    <div class="stat">Übersetzt: <span class="num ok">${translated} (${pct}%)</span></div>
+    <div class="stat">Markiert: <span class="num ${flagged>0?'warn':''}">${flagged}</span></div>
+    <div class="stat">Angezeigt: <span class="num">${indices.length}</span></div>`;
+  const container=document.getElementById('table-container');
+  if(!indices.length){container.innerHTML='<div class="empty-state"><div class="icon">✓</div><p>Keine Einträge für diesen Filter</p></div>';return;}
+  let html=`<table><thead><tr><th>#</th><th>Original (JP)</th><th>Übersetzung</th><th>Flags</th><th>Kontext</th><th>KI</th></tr></thead><tbody>`;
+  for(const i of indices){
+    const orig=rows[i][0]||'',trans=rows[i][1]||'',ctx=ctxs[i]?ctxs[i][0]:'';
+    const flags=analyzeRow(orig,trans,ctx);
+    html+=`<tr class="${flags.length?'flagged':''}" data-row="${i}">
+      <td class="col-num">${i}</td>
+      <td class="col-orig">${hlCodes(orig)}</td>
+      <td class="col-trans"><textarea rows="2" data-row="${i}">${esc(trans)}</textarea></td>
+      <td class="col-flags">${flagHtml(flags)}</td>
+      <td class="col-ctx">${esc(ctx)}</td>
+      <td class="col-ai"><button class="lm-btn" data-row="${i}">✦ Fix</button></td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  container.innerHTML=html;
+
+  container.querySelectorAll('textarea').forEach(ta=>{
+    ta.addEventListener('input',()=>{
+      const ri=parseInt(ta.dataset.row);
+      const ctx2=ctxs[ri]?ctxs[ri][0]:'';
+      transData.project.files[currentFileKey].data[ri][1]=ta.value;
+      const tr=ta.closest('tr');
+      const fl=analyzeRow(transData.project.files[currentFileKey].data[ri][0],ta.value,ctx2);
+      tr.className=fl.length?'flagged':'';
+      tr.querySelector('.col-flags').innerHTML=flagHtml(fl);
+    });
+    ta.addEventListener('focus',()=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});
+  });
+
+  container.querySelectorAll('.lm-btn').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      const ri=parseInt(btn.dataset.row);
+      const fv=transData.project.files[currentFileKey];
+      const ctx2=ctxs[ri]?ctxs[ri][0]:'';
+      btn.disabled=true;btn.textContent='…';btn.classList.add('loading');
+      try{
+        const fixed=await lmCorrect(fv.data[ri][0],fv.data[ri][1],ctx2);
+        if(!fixed||!fixed.trim()){notify('⚠ Modell gab leere Antwort — Original behalten','warn');}
+        else{
+          fv.data[ri][1]=fixed;
+          const ta=container.querySelector(`textarea[data-row="${ri}"]`);
+          if(ta){ta.value=fixed;ta.dispatchEvent(new Event('input'));}
+          notify('✓ Korrigiert','ok');
+        }
+      }catch(e){
+        if(e.message==='CORS_ERROR')showCorsHelp();else notify('LM Fehler: '+e.message,'err');
+      }
+      btn.disabled=false;btn.textContent='✦ Fix';btn.classList.remove('loading');
+    });
+  });
+}
+
+// ═══ FILTERS ══════════════════════════════════════════════
+document.querySelectorAll('[data-filter]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    filterMode=btn.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b===btn));
+    renderTable();
+  });
+});
+let searchTO;
+document.getElementById('search-input').addEventListener('input',e=>{
+  clearTimeout(searchTO);searchTO=setTimeout(()=>{searchQuery=e.target.value.trim();renderTable();},250);
+});
+
+// ═══ LM TEST ══════════════════════════════════════════════
+document.getElementById('btn-test-lm').addEventListener('click',async()=>{
+  const cfg=getLMCfg();const btn=document.getElementById('btn-test-lm');
+  btn.disabled=true;btn.textContent='…';
+  try{
+    const r=await fetch(`${cfg.url}/models`);if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    notify(`✓ Verbunden! Modelle: ${(d.data||[]).map(m=>m.id).join(', ')||'—'}`,'ok');
+  }catch(e){
+    if(e.message.includes('Failed to fetch'))showCorsHelp();else notify('Fehler: '+e.message,'err');
+  }
+  btn.disabled=false;btn.textContent='🔌 Testen';
+});
+
+// ═══ BATCH FIX ════════════════════════════════════════════
+document.getElementById('btn-fix-all').addEventListener('click',async()=>{
+  if(!transData)return;
+  const skipEmpty=document.getElementById('chk-skip-empty').checked;
+  const allFlagged=[];
+  for(const[key,fval]of Object.entries(transData.project.files)){
+    if(skippedFiles.has(key))continue;
+    const rows=fval.data||[];const ctxA=fval.context||[];
+    rows.forEach((r,i)=>{
+      const fl=analyzeRow(r[0],r[1],ctxA[i]?ctxA[i][0]:'');
+      if(fl.length>0&&!(skipEmpty&&fl.length===1&&fl[0]==='empty'))
+        allFlagged.push({key,fval,i,ctx:ctxA[i]?ctxA[i][0]:''});
+    });
+  }
+  if(!allFlagged.length){notify('Keine markierten Zeilen in aktiven Dateien','warn');return;}
+  stopRequested=false;
+  const cfg=getLMCfg();
+  const wrap=document.getElementById('progress-wrap');wrap.style.display='flex';
+  let done=0;const total=allFlagged.length;
+  notify(`${total} Zeilen werden korrigiert…`,'warn');
+  for(let b=0;b<allFlagged.length;b+=cfg.batch){
+    if(stopRequested)break;
+    const chunk=allFlagged.slice(b,b+cfg.batch);
+    await Promise.all(chunk.map(async({key,fval,i,ctx})=>{
+      if(stopRequested)return;
+      try{
+        const fixed=await lmCorrect(fval.data[i][0],fval.data[i][1],ctx);
+        if(fixed&&fixed.trim()){
+          fval.data[i][1]=fixed;
+          const ta=document.querySelector(`textarea[data-row="${i}"]`);
+          if(ta&&currentFileKey===key){ta.value=fixed;ta.dispatchEvent(new Event('input'));}
+        }
+      }catch(e){
+        if(e.message==='CORS_ERROR'){showCorsHelp();stopRequested=true;}
+        else console.warn(`${key} row ${i}:`,e);
+      }
+      done++;
+      document.getElementById('progress-text').textContent=`${done}/${total}`;
+      document.getElementById('progress-bar').style.width=Math.round(done/total*100)+'%';
+    }));
+  }
+  wrap.style.display='none';renderTable();buildSidebar();
+  notify(stopRequested?`Gestoppt nach ${done} Zeilen.`:`✓ ${done} Zeilen korrigiert!`,'ok');
+});
+document.getElementById('btn-stop').addEventListener('click',()=>{stopRequested=true;});
+
+// ═══ SAVE ═════════════════════════════════════════════════
+document.getElementById('btn-save').addEventListener('click',()=>{
+  if(!transData)return;
+  const blob=new Blob([JSON.stringify(transData)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=fileName||'output.trans';a.click();
+  URL.revokeObjectURL(url);notify('✓ Gespeichert: '+a.download,'ok');
+});
+
+// ═══ CORS MODAL ═══════════════════════════════════════════
+function showCorsHelp(){
+  document.getElementById('cors-modal')?.remove();
+  const isChrome=navigator.userAgent.includes('Chrome')&&!navigator.userAgent.includes('Edg');
+  const isFile=location.protocol==='file:';
+  const modal=document.createElement('div');modal.id='cors-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`<div style="background:#16181f;border:1px solid #fc5c7d;border-radius:12px;max-width:540px;width:100%;padding:24px;font-family:'Syne',sans-serif;">
+    <div style="font-size:1.05rem;font-weight:800;color:#fc5c7d;margin-bottom:4px;">⚠ CORS-Fehler</div>
+    <div style="font-size:0.78rem;color:#6b6f80;margin-bottom:18px;">Browser blockiert Anfragen an LM Studio.</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="background:#1e2028;border:1px solid #2a2d38;border-radius:8px;padding:14px;">
+        <div style="font-weight:700;color:#3ecf8e;margin-bottom:8px;">✓ Lösung 1 — CORS in LM Studio aktivieren (empfohlen)</div>
+        <ol style="font-size:0.76rem;color:#e8eaf0;line-height:2;margin-left:16px;">
+          <li>LM Studio → links <b>Stecker-Symbol</b> (Local Server)</li>
+          <li>Unter <b>Server Options</b>: <b>"Enable CORS"</b> einschalten</li>
+          <li>Server stoppen & neu starten → hier <b>🔌 Testen</b></li>
+        </ol>
+      </div>
+      ${isChrome&&isFile?`<div style="background:#1e2028;border:1px solid #2a2d38;border-radius:8px;padding:14px;">
+        <div style="font-weight:700;color:#f5a623;margin-bottom:6px;">⚡ Lösung 2 — Chrome ohne CORS starten</div>
+        <code style="display:block;background:#0e0f13;border:1px solid #2a2d38;border-radius:5px;padding:8px;font-size:0.7rem;color:#7c5cfc;word-break:break-all;">"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --disable-web-security --user-data-dir="%TEMP%\\chrome-no-cors"</code>
+      </div>`:''}
+      <div style="background:#1e2028;border:1px solid #2a2d38;border-radius:8px;padding:14px;">
+        <div style="font-weight:700;color:#7c5cfc;margin-bottom:4px;">🌐 Lösung ${isChrome&&isFile?3:2} — Firefox benutzen</div>
+        <div style="font-size:0.76rem;color:#e8eaf0;">Firefox erlaubt file:// → localhost standardmäßig.</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;text-align:right;">
+      <button onclick="document.getElementById('cors-modal').remove()" style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;padding:7px 18px;background:#2a2d38;color:#e8eaf0;border:none;border-radius:6px;cursor:pointer;">Schließen</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+
+// ═══ UTILS ════════════════════════════════════════════════
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+let notifTO;
+function notify(msg,type='ok'){
+  const el=document.getElementById('notif');
+  el.textContent=msg;el.className='show '+type;
+  clearTimeout(notifTO);notifTO=setTimeout(()=>el.className='',5000);
+}
+</script>
+</body>
+</html>
